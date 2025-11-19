@@ -6,7 +6,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ toLower(github.repository) }} # Принудительное приведение к нижнему регистру
+  IMAGE_NAME: ${{ lowercase(github.repository) }} # Принудительное приведение к нижнему регистру
 
 jobs:
   build-and-deploy:
