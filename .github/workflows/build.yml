@@ -6,7 +6,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ lowercase(github.repository) }} # Принудительное приведение к нижнему регистру
 
 jobs:
   build-and-deploy:
@@ -14,6 +13,10 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Convert repository name to lowercase
+      id: repo_lower
+      run: echo "REPO_LOWER=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
@@ -30,15 +33,15 @@ jobs:
       with:
         context: .
         push: true
-        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        tags: ${{ env.REGISTRY }}/${{ steps.repo_lower.outputs.REPO_LOWER }}:latest
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
-          PYTHONPATH=/app/botari  # Явное указание пути
+          PYTHONPATH=/app/botari
 
     - name: Verify image
       run: |
-        echo "Built image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest"
+        echo "Built image: ${{ env.REGISTRY }}/${{ steps.repo_lower.outputs.REPO_LOWER }}:latest"
 
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v0.1.10
@@ -47,7 +50,7 @@ jobs:
         username: ${{ secrets.SSH_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          cd ~/botari  # Обновленный путь в нижнем регистре
+          cd ~/botari
           docker-compose down
           docker-compose pull
           docker-compose up -d --build
